@@ -1,23 +1,39 @@
 #!/bin/bash
 
 # Part 1: File and Directory Exploration
-echo "Welcome to the Interactive File and Directory Explorer!"
 
-while true; do
-    # List all files and directories in the current path
-    echo "Files and Directories in the Current Path:"
-    ls -lh
 
-    # Part 2: Character Counting
-    read -p "Enter a line of text (Press Enter without text to exit): " input
+# Display a welcome message and list all files and directories in the current path
 
-    # Exit if the user enters an empty string
-    if [ -z "$input" ]; then
-        echo "Exiting the Interactive Explorer. Goodbye!"
-        break
-    fi
+echo "Welcome to the 2nd day of bash scripting challenge"
 
-    # Calculate and print the character count for the input line
-    char_count=$(echo -n "$input" | wc -m)
-    echo "Character Count: $char_count"
-done
+echo "Files and Directories are in present working directory"
+
+ls -lh
+
+# Loop to continuously display the file and directory list until the user decides to exit
+
+ while true; do
+        echo "Current Files and Directories:"
+        ls -lh
+
+        read -p "Press 'q' to quit or any other key to refresh the list: " input
+        if [ "$input" = "q" ]; then
+            break
+        fi
+    done
+
+# Part 2: Character Counting
+# Count the characters in the user's input line
+
+ echo "Part 2: Character Counting"
+    echo "Enter lines of text (press Enter without any text to exit):"
+    while true; do
+        read line
+        if [ -z "$line" ]; then
+            break
+        fi
+
+        char_count=${#line}
+        echo "Character count for '$line': $char_count"
+    done

@@ -1,41 +1,43 @@
 #!/bin/bash
 
-# Function to display usage information and available options
-function display_usage {
-    echo "Usage: $0 /path/to/source_directory"
-}
-
-# Check if a valid directory path is provided as a command-line argument
-if [ $# -eq 0 ] || [ ! -d "$1" ]; then
-    echo "Error: Please provide a valid directory path as a command-line argument."
-    display_usage
+# Check if the script is executed with the correct number of arguments
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <directory_path>"
     exit 1
 fi
 
-# Directory path of the source directory to be backed up
-source_dir="$1"
+# Get the directory path from the command-line argument
+directory_path=$1
 
-# Function to create a timestamped backup folder
-function create_backup {
-    local timestamp=$(date '+%Y-%m-%d_%H-%M-%S')  # Get the current timestamp
-    local backup_dir="${source_dir}/backup_${timestamp}"
+# Create a timestamped backup folder inside the specified directory
+backup_folder="$directory_path/backup_$(date +'%Y%m%d_%H%M%S')"
+mkdir -p "$backup_folder"
 
-    # Create the backup folder with the timestamped name
-    mkdir "$backup_dir"
-    echo "Backup created successfully: $backup_dir"
-}
+# Copy all the files from the specified directory to the backup folder using rsync
+rsync -a "$directory_path/" "$backup_folder/"
 
-# Function to perform the rotation and keep only the last 3 backups
-function perform_rotation {
-    local backups=($(ls -t "${source_dir}/backup_"* 2>/dev/null))  # List existing backups sorted by timestamp
+# Function to perform rotation and keep only the last 3 backups
+perform_rotation() {
+    # Get a list of all backup folders in the specified directory and sort them by modification time (oldest first)
+    backup_folders=($(find "$directory_path" -maxdepth 1 -type d -name "backup_*" -printf "%T+ %p\n" | sort | cut -d' ' -f2))
 
-    # Check if there are more than 3 backups
-    if [ "${#backups[@]}" -gt 3 ]; then
-        local backups_to_remove="${backups[@]:3}"  # Get backups beyond the last 3
-        rm -rf "${backups_to_remove[@]}"  # Remove the oldest backups
+    # Calculate the number of backup folders
+    num_backup_folders=${#backup_folders[@]}
+
+    # Check if there are more than 3 backup folders
+    if [ $num_backup_folders -gt 3 ]; then
+        # Determine the number of folders to be removed (older backups)
+        num_folders_to_remove=$((num_backup_folders - 3))
+
+        # Remove the oldest backup folders (perform rotation)
+        for ((i=0; i<$num_folders_to_remove; i++)); do
+            rm -r "${backup_folders[i]}"
+        done
     fi
 }
 
-# Main script logic
-create_backup
+# Perform rotation to keep only the last 3 backups
 perform_rotation
+
+# Display a message indicating the backup is successful
+echo "Backup completed successfully. New backup is stored in $backup_folder."
